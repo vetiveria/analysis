@@ -9,6 +9,7 @@ import dask.dataframe as dd
 import pandas as pd
 
 import config
+import segments.functions.write
 
 
 class Matrix:
@@ -22,12 +23,9 @@ class Matrix:
         """
 
         configurations = config.Config()
-
-        # URL Strings
         self.attributesurl = configurations.attrbutesurl
-
-        # Local Path Strings
         self.datapath = configurations.datapath
+        self.warehousepath = configurations.warehousepath
 
     def attributes(self):
         """
@@ -94,7 +92,10 @@ class Matrix:
 
         # Hence
         streams = self.matrices(paths=paths, kwargs=kwargs)
-
         matrix = streams.compute(scheduler='processes')
+        design = matrix.reset_index(drop=True)
 
-        return matrix.reset_index(drop=True)
+        segments.functions.write.Write() \
+            .exc(blob=design, path=os.path.join(self.warehousepath, 'design'), filename='design.csv')
+
+        return design
