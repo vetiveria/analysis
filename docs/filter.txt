@@ -1,0 +1,15 @@
+geopandas
+geopy
+pywin32
+pytest
+coverage
+pytest-cov
+pylint
+PyYaml
+jupyterlab
+dask
+dotmap
+quantities
+scikit-learn
+matplotlib
+seaborn
