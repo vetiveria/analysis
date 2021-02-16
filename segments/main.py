@@ -30,11 +30,16 @@ def main():
                    labels={'x': 'the first n components', 'y': '% explained'})
 
     # Nonlinear dimensionality reduction
-    kpca = kernel.exc(data=design, exclude=['COUNTYGEOID'], identifiers=['COUNTYGEOID'])
-    logger.info('\n{}\n'.format(kpca.projections.tail()))
-    logger.info('\n{}\n'.format(kpca.eigenstates.head()))
+    kernel = segments.principals.kernel.Kernel(data=design, exclude=['COUNTYGEOID'], identifiers=['COUNTYGEOID'])
 
-    graphs.scatter(data=kpca.eigenstates[:15], x='component', y='eigenvalue',
+    rpca = kernel.exc(kernel='rbf')
+    logger.info('\n{}\n'.format(rpca.eigenstates.head()))
+    graphs.scatter(data=rpca.eigenstates[:15], x='component', y='eigenvalue',
+                   labels={'x': 'principal component number', 'y': 'eigenvalue'})
+
+    cpca = kernel.exc(kernel='cosine')
+    logger.info('\n{}\n'.format(cpca.eigenstates.head()))
+    graphs.scatter(data=cpca.eigenstates[:15], x='component', y='eigenvalue',
                    labels={'x': 'principal component number', 'y': 'eigenvalue'})
 
 
@@ -54,7 +59,7 @@ if __name__ == '__main__':
 
     directories = segments.src.directories.Directories()
     linear = segments.principals.linear.Linear()
-    kernel = segments.principals.kernel.Kernel()
+
     graphs = segments.functions.graphs.Graphs()
 
     main()
