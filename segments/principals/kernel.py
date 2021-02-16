@@ -19,53 +19,56 @@ class Kernel:
     Class Kernel
     """
 
-    def __init__(self):
-        """
-        The constructor
+    def __init__(self, data: pd.DataFrame, exclude: list, identifiers: list):
         """
 
+        :param data: The data in focus
+        :param exclude: The fields of data that should not be included in the decomposition step
+        :param identifiers: The field/s that identify each data row
+        """
+
+        self.data = data
+        self.exclude = exclude
+        self.identifiers = identifiers
+
+        # Config
         configurations = config.Config()
         self.warehousepath = configurations.warehousepath
 
-        self.write = segments.functions.write.Write()
-
+        # Preliminaries
         self.KPCA = collections.namedtuple(typename='KPCA', field_names=['projections', 'eigenstates'])
-
         self.margin = segments.functions.margin.Margin()
         self.random_state = 5
 
-    def decomposition(self, data: pd.DataFrame, exclude: list):
+    def decomposition(self, kernel: str):
         """
 
-        :param data:
-        :param exclude:
+        :param kernel:
         :return:
         """
 
         # The independent variables
-        regressors = data.columns.drop(labels=exclude)
+        regressors = self.data.columns.drop(labels=self.exclude)
 
         # Decomposition: kernel -> 'rbf', 'cosine'
-        algorithm = sklearn.decomposition.KernelPCA(kernel='rbf', eigen_solver='auto',
+        algorithm = sklearn.decomposition.KernelPCA(kernel=kernel, eigen_solver='auto',
                                                     random_state=self.random_state, n_jobs=-1)
-        model: sklearn.decomposition.KernelPCA = algorithm.fit(data[regressors])
+        model: sklearn.decomposition.KernelPCA = algorithm.fit(self.data[regressors])
 
         # The transform
-        transform = model.fit_transform(data[regressors])
+        transform = model.fit_transform(self.data[regressors])
 
         eigenvalues = model.lambdas_
         components = np.arange(1, 1 + eigenvalues.shape[0])
 
         return transform, pd.DataFrame(data={'component': components, 'eigenvalue': eigenvalues})
 
-    @staticmethod
-    def projections(reference: np.ndarray, transform: np.ndarray, limit: int, identifiers: list) -> pd.DataFrame:
+    def projections(self, reference: np.ndarray, transform: np.ndarray, limit: int) -> pd.DataFrame:
         """
 
         :param reference:
         :param transform:
         :param limit:
-        :param identifiers:
         :return:
         """
 
@@ -74,36 +77,35 @@ class Kernel:
 
         # Fields
         fields = ['C{:02d}'.format(i) for i in np.arange(1, 1 + limit)]
-        fields = identifiers + fields
+        fields = self.identifiers + fields
 
         # values
         values = np.concatenate((reference, core), axis=1)
 
         return pd.DataFrame(data=values, columns=fields)
 
-    def exc(self, data: pd.DataFrame, exclude: list, identifiers: list) -> collections.namedtuple:
+    def exc(self, kernel: str) -> collections.namedtuple:
         """
 
-        :param data:
-        :param exclude:
-        :param identifiers:
+        :param kernel:
         :return:
         """
 
         # Decomposing
-        transform, eigenstates = self.decomposition(data=data, exclude=exclude)
+        transform, eigenstates = self.decomposition(kernel=kernel)
 
         # Hence, plausible number of core principal components
         index: int = self.margin.exc(values=eigenstates.eigenvalue.values)
         limit = eigenstates.component[index]
 
         # Projections
-        reference = data[identifiers].values.reshape(data.shape[0], len(identifiers))
-        projections = self.projections(reference=reference, transform=transform, limit=limit, identifiers=identifiers)
+        reference = self.data[self.identifiers].values.reshape(self.data.shape[0], len(self.identifiers))
+        projections = self.projections(reference=reference, transform=transform, limit=limit)
 
         # Write
-        path = os.path.join(self.warehousepath, 'principals', 'kernel')
-        self.write.exc(blob=eigenstates, path=path, filename='eigenstates.csv')
-        self.write.exc(blob=projections, path=path, filename='projections.csv')
+        path = os.path.join(self.warehousepath, 'principals', 'kernel', kernel)
+        write = segments.functions.write.Write()
+        write.exc(blob=eigenstates, path=path, filename='eigenstates.csv')
+        write.exc(blob=projections, path=path, filename='projections.csv')
 
         return self.KPCA._make((projections, eigenstates))
