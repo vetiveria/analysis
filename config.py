@@ -17,7 +17,8 @@ class Config:
 
         # URL Links
         self.dataurl = "https://github.com/vetiveria/spots/raw/master/warehouse/designs/designs.zip"
-        self.attrbutesurl = "https://raw.githubusercontent.com/vetiveria/spots/master/warehouse/designs/attributes/attributes.csv"
+        self.attrbutesurl = "https://raw.githubusercontent.com/vetiveria/spots/master/warehouse/" \
+                            "designs/attributes/attributes.csv"
 
         # Directories
         self.datapath = os.path.join(os.getcwd(), 'data')
