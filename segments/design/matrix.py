@@ -27,6 +27,8 @@ class Matrix:
         self.datapath = configurations.datapath
         self.warehousepath = configurations.warehousepath
 
+        self.path = os.path.join(self.warehousepath, 'design')
+
     def attributes(self):
         """
         The attributes of the files to be read
@@ -34,6 +36,7 @@ class Matrix:
         :return:
         """
 
+        # Read attributes
         try:
             data = pd.read_csv(filepath_or_buffer=self.attributesurl,
                                header=0, usecols=['field', 'type'], dtype={'field': str, 'type': str},
@@ -41,6 +44,11 @@ class Matrix:
         except OSError as err:
             raise Exception(err.strerror) from err
 
+        # Write for later use
+        segments.functions.write.Write().\
+            exc(blob=data, path=self.path, filename='attributes.csv')
+
+        # Return
         fields = data.field.values
         types = data.set_index(keys='field', drop=True).to_dict(orient='dict')['type']
 
@@ -67,11 +75,13 @@ class Matrix:
         :return:
         """
 
+        # Read the data files in parallel via Dask
         try:
             streams = dd.read_csv(urlpath=paths, blocksize=None, **kwargs)
         except OSError as err:
             raise err
 
+        # Reading model; for inspection purposes
         streams.visualize(filename='streams', format='pdf')
 
         return streams
@@ -95,7 +105,8 @@ class Matrix:
         matrix = streams.compute(scheduler='processes')
         design = matrix.reset_index(drop=True)
 
-        segments.functions.write.Write() \
-            .exc(blob=design, path=os.path.join(self.warehousepath, 'design'), filename='design.csv')
+        # Write
+        segments.functions.write.Write().\
+            exc(blob=design, path=self.path, filename='design.csv')
 
         return design
