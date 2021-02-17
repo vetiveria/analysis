@@ -4,12 +4,15 @@ Module matrix
 
 import glob
 import os
+import collections
 
 import dask.dataframe as dd
 import pandas as pd
 
 import config
 import segments.functions.write
+import segments.functions.scaling
+import segments.src.attributes
 
 
 class Matrix:
@@ -17,51 +20,17 @@ class Matrix:
     Class Matrix
     """
 
-    def __init__(self):
+    def __init__(self, descriptors: collections.namedtuple):
         """
         Constructor
         """
 
-        configurations = config.Config()
-        self.attributesurl = configurations.attrbutesurl
-        self.datapath = configurations.datapath
-        self.warehousepath = configurations.warehousepath
+        self.configurations = config.Config()
+        self.path = os.path.join(self.configurations.warehousepath, 'design')
 
-        self.path = os.path.join(self.warehousepath, 'design')
+        self.descriptors = descriptors
 
-    def attributes(self):
-        """
-        The attributes of the files to be read
-
-        :return:
-        """
-
-        # Read attributes
-        try:
-            data = pd.read_csv(filepath_or_buffer=self.attributesurl,
-                               header=0, usecols=['field', 'type'], dtype={'field': str, 'type': str},
-                               encoding='UTF-8')
-        except OSError as err:
-            raise Exception(err.strerror) from err
-
-        # Write for later use
-        segments.functions.write.Write().\
-            exc(blob=data, path=self.path, filename='attributes.csv')
-
-        # Return
-        fields = data.field.values
-        types = data.set_index(keys='field', drop=True).to_dict(orient='dict')['type']
-
-        return fields, types
-
-    def files(self):
-        """
-        The list of files ...
-
-        :return:
-        """
-
-        return glob.glob(pathname=os.path.join(self.datapath, '*.csv'))
+        self.write = segments.functions.write.Write()
 
     @staticmethod
     def matrices(paths: list, kwargs: dict) -> dd.DataFrame:
@@ -86,27 +55,40 @@ class Matrix:
 
         return streams
 
-    def exc(self):
+    def scale(self, blob: pd.DataFrame) -> pd.DataFrame:
+
+        # Focus on measurements only
+        measurements = blob.drop(columns=self.descriptors.exclude)
+
+        # Scaling
+        scaled, _ = segments.functions.scaling.Scaling(matrix=measurements.values).robust()
+
+        # Re-frame
+        design = pd.DataFrame(data=scaled, columns=measurements.columns)
+        design = pd.concat((blob[self.descriptors.identifiers], design.copy()),
+                           axis=1, join='outer', ignore_index=False)
+        return design
+
+    def exc(self) -> pd.DataFrame:
         """
         Returns a design matrix
 
         :return:
         """
 
-        # The data files
-        paths = self.files()
+        # The data files, the attributes of the files
+        paths = glob.glob(pathname=os.path.join(self.configurations.datapath, '*.csv'))
+        _, _, kwargs, attributes = segments.src.attributes.Attributes().exc()
 
-        # The attributes of the files
-        fields, types = self.attributes()
-        kwargs = {'usecols': fields, 'encoding': 'UTF-8', 'header': 0, 'dtype': types}
-
-        # Hence
+        # Hence: The design matrix is the scaled form of the original design data
         streams = self.matrices(paths=paths, kwargs=kwargs)
-        matrix = streams.compute(scheduler='processes')
-        design = matrix.reset_index(drop=True)
+        frame = streams.compute(scheduler='processes')
+        original: pd.DataFrame = frame.reset_index(drop=True)
+        design: pd.DataFrame = self.scale(blob=original)
 
         # Write
-        segments.functions.write.Write().\
-            exc(blob=design, path=self.path, filename='design.csv')
+        self.write.exc(blob=attributes, path=self.path, filename='attributes.csv')
+        self.write.exc(blob=original, path=self.path, filename='original.csv')
+        self.write.exc(blob=design, path=self.path, filename='design.csv')
 
         return design

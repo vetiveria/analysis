@@ -20,6 +20,9 @@ class Config:
         self.attrbutesurl = "https://raw.githubusercontent.com/vetiveria/spots/master/warehouse/" \
                             "designs/attributes/attributes.csv"
 
+        # Measurements to be excluded from the measurements fields included in attributes.csv
+        self.exclude_measurements = ['INVALID']
+
         # Directories
         self.datapath = os.path.join(os.getcwd(), 'data')
         self.warehousepath = os.path.join(os.getcwd(), 'warehouse')
