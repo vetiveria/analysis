@@ -1,6 +1,8 @@
 import os
 import sys
 
+import collections
+
 import logging
 
 
@@ -18,28 +20,25 @@ def main():
     segments.src.read.Read().exc()
 
     # Get the design matrix
-    design = segments.design.matrix.Matrix().exc()
+    design = segments.design.matrix.Matrix(descriptors=descriptors).exc()
     logger.info('A preview of the design matrix\n{}\n'.format(design.tail().iloc[:, :7]))
 
     # Linear dimensionality reduction
-    lpca = linear.exc(data=design, exclude=['COUNTYGEOID'], identifiers=['COUNTYGEOID'])
-    logger.info('\n{}\n'.format(lpca.projections.tail()))
-    logger.info('\n{}\n'.format(lpca.variance.head()))
-
-    graphs.scatter(data=lpca.variance[:25], x='components', y='explain',
+    lpc = linear.exc(
+        data=design, exclude=descriptors.exclude, identifiers=descriptors.identifiers)
+    graphs.scatter(data=lpc.variance[:25], x='components', y='explain',
                    labels={'x': 'the first n components', 'y': '% explained'})
 
     # Nonlinear dimensionality reduction
-    kernel = segments.principals.kernel.Kernel(data=design, exclude=['COUNTYGEOID'], identifiers=['COUNTYGEOID'])
+    kernel = segments.principals.kernel.Kernel(
+        data=design, exclude=descriptors.exclude, identifiers=descriptors.identifiers)
 
-    rpca = kernel.exc(kernel='rbf')
-    logger.info('\n{}\n'.format(rpca.eigenstates.head()))
-    graphs.scatter(data=rpca.eigenstates[:15], x='component', y='eigenvalue',
+    rpc = kernel.exc(kernel='rbf')
+    graphs.scatter(data=rpc.eigenstates[:15], x='component', y='eigenvalue',
                    labels={'x': 'principal component number', 'y': 'eigenvalue'})
 
-    cpca = kernel.exc(kernel='cosine')
-    logger.info('\n{}\n'.format(cpca.eigenstates.head()))
-    graphs.scatter(data=cpca.eigenstates[:15], x='component', y='eigenvalue',
+    cpc = kernel.exc(kernel='cosine')
+    graphs.scatter(data=cpc.eigenstates[:15], x='component', y='eigenvalue',
                    labels={'x': 'principal component number', 'y': 'eigenvalue'})
 
 
@@ -48,6 +47,9 @@ if __name__ == '__main__':
     root = os.getcwd()
     sys.path.append(root)
     sys.path.append(os.path.join(root, 'segments'))
+
+    Descriptors = collections.namedtuple(typename='Descriptors', field_names=['identifiers', 'exclude'])
+    descriptors = Descriptors(identifiers=['COUNTYGEOID'], exclude=['COUNTYGEOID'])
 
     import segments.src.directories
     import segments.src.read
