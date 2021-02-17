@@ -5,7 +5,6 @@ Module matrix
 import glob
 import os
 import collections
-import numpy as np
 
 import dask.dataframe as dd
 import pandas as pd
@@ -13,6 +12,7 @@ import pandas as pd
 import config
 import segments.functions.write
 import segments.functions.scaling
+import segments.src.attributes
 
 
 class Matrix:
@@ -31,30 +31,6 @@ class Matrix:
         self.descriptors = descriptors
 
         self.write = segments.functions.write.Write()
-
-    def attributes(self) -> (np.ndarray, dict, dict):
-        """
-        The attributes of the files to be read
-
-        :return:
-        """
-
-        # Read attributes
-        try:
-            data = pd.read_csv(filepath_or_buffer=self.configurations.attrbutesurl, header=0,
-                               usecols=['field', 'type'], dtype={'field': str, 'type': str}, encoding='UTF-8')
-        except OSError as err:
-            raise Exception(err.strerror) from err
-
-        # Write for later use
-        self.write.exc(blob=data, path=self.path, filename='attributes.csv')
-
-        # Return
-        fields = data.field.values
-        types = data.set_index(keys='field', drop=True).to_dict(orient='dict')['type']
-        kwargs = {'usecols': fields, 'encoding': 'UTF-8', 'header': 0, 'dtype': types}
-
-        return fields, types, kwargs
 
     @staticmethod
     def matrices(paths: list, kwargs: dict) -> dd.DataFrame:
@@ -102,7 +78,7 @@ class Matrix:
 
         # The data files, the attributes of the files
         paths = glob.glob(pathname=os.path.join(self.configurations.datapath, '*.csv'))
-        _, _, kwargs = self.attributes()
+        _, _, kwargs, attributes = segments.src.attributes.Attributes().exc()
 
         # Hence: The design matrix is the scaled form of the original design data
         streams = self.matrices(paths=paths, kwargs=kwargs)
@@ -111,6 +87,7 @@ class Matrix:
         design: pd.DataFrame = self.scale(blob=original)
 
         # Write
+        self.write.exc(blob=attributes, path=self.path, filename='attributes.csv')
         self.write.exc(blob=original, path=self.path, filename='original.csv')
         self.write.exc(blob=design, path=self.path, filename='design.csv')
 
