@@ -1,38 +1,32 @@
-## Segments
+<br>
 
 Analysis of [spots'](https://github.com/vetiveria/spots) outputs.
 
 <br>
 
-### Development Environment
-
-In preparation for Docker, etc.
-
-#### Anaconda
-
-Refer to [spots](https://github.com/vetiveria/spots#development-environment)
+* [Development Environment](#development-environment)
+* [Notes](#notes)
 
 <br>
 
-#### Requirements
+## Development Environment
 
-In relation to requirements.txt
+Locally, it uses the development environment `environment`; the environment is detailed within [spots](https://github.
+com/vetiveria/spots#development-environment).  The `requirements.txt` file is created via
 
-```markdown
+```shell
     pip freeze -r docs/filter.txt > requirements.txt
 ```
 
-<br>
+And, `.pylintrc` is created via command
 
-#### Conventions
-
-```markdown
+```shell
     pylint --generate-rcfile > .pylintrc
 ```
 
 <br>
 <br>
 
-### Notes
+## Notes
 
 ``generator = np.random.default_rng(seed=0)``
