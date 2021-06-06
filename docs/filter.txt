@@ -1,6 +1,5 @@
 geopandas
 geopy
-pywin32
 pytest
 coverage
 pytest-cov
