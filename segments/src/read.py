@@ -6,6 +6,11 @@ import config
 
 
 class Read:
+    """
+    Class Read
+
+    Unloads the archive of design matrices; one per U.S. state.  Subsequently, archive is extracted into a data path.
+    """
 
     def __init__(self):
         """
@@ -14,7 +19,7 @@ class Read:
 
         configurations = config.Config()
         self.dataurl = configurations.dataurl
-        self.datapath = configurations.datapath
+        self.datapath = configurations.source
 
     def extract(self):
         """
