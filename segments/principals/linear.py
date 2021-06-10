@@ -26,7 +26,7 @@ class Linear:
         """
 
         configurations = config.Config()
-        self.warehousepath = configurations.warehousepath
+        self.warehouse = configurations.warehouse
 
         self.write = segments.functions.write.Write()
 
@@ -117,7 +117,7 @@ class Linear:
         projections = self.projections(reference=reference, transform=transform, limit=limit, identifiers=identifiers)
 
         # Write
-        path = os.path.join(self.warehousepath, 'principals', 'linear')
+        path = os.path.join(self.warehouse, 'principals', 'linear')
         self.write.exc(blob=variance, path=path, filename='variance.csv')
         self.write.exc(blob=projections, path=path, filename='projections.csv')
 
