@@ -33,7 +33,7 @@ class Kernel:
 
         # Config
         configurations = config.Config()
-        self.warehousepath = configurations.warehousepath
+        self.warehouse = configurations.warehouse
 
         # Preliminaries
         self.KPCA = collections.namedtuple(typename='KPCA', field_names=['projections', 'eigenstates'])
@@ -103,7 +103,7 @@ class Kernel:
         projections = self.projections(reference=reference, transform=transform, limit=limit)
 
         # Write
-        path = os.path.join(self.warehousepath, 'principals', 'kernel', kernel)
+        path = os.path.join(self.warehouse, 'principals', 'kernel', kernel)
         write = segments.functions.write.Write()
         write.exc(blob=eigenstates, path=path, filename='eigenstates.csv')
         write.exc(blob=projections, path=path, filename='projections.csv')
