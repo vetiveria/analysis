@@ -24,6 +24,15 @@ class Config:
         self.exclude_measurements = ['INVALID']
 
         # Directories
-        self.datapath = os.path.join(os.getcwd(), 'data')
-        self.warehousepath = os.path.join(os.getcwd(), 'warehouse')
-        self.directories = [self.datapath, self.warehousepath]
+        self.source = os.path.join(os.getcwd(), 'data')
+        self.warehouse = os.path.join(os.getcwd(), 'warehouse')
+        self.directories = [self.source, self.warehouse]
+
+    @staticmethod
+    def risk():
+
+        root = 'https://raw.githubusercontent.com/vetiveria/risk/master/warehouse/{}'
+        risk_groups = ['cancerRiskPollutantsNames', 'immunologicalIndexPollutantsNames', 'kidneyIndexPollutantsNames',
+                       'liverIndexPollutantsNames', 'neurologicalIndexPollutantsNames', 'respiratoryIndexPollutantsNames']
+
+        return [root.format(risk_group) + '.csv' for risk_group in risk_groups]
