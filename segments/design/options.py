@@ -63,7 +63,9 @@ class Options:
         """
 
         pollutants = self.pollutants(url=url)
-        select = ['COUNTYGEOID'] + pollutants
+        inattributes = [pollutant[1:] if len(pollutant) == 10 else pollutant
+                for pollutant in pollutants ]
+        select = ['COUNTYGEOID'] + inattributes
         attributes = self.data.attributes[self.data.attributes['field'].isin(select)]
 
         return self.data.design[select].copy(), self.data.original[select].copy(), attributes
