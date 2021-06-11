@@ -35,23 +35,32 @@ def main():
 
         # The (a) design matrix, and (b) path, of a group
         design, target = options.exc(group=group)
+        n_pollutants = len(design.columns.drop(labels=descriptors.exclude))
+        if n_pollutants <= 3:
+            continue
 
         # Linear dimensionality reduction
         lpc = linear.exc(data=design, exclude=descriptors.exclude, identifiers=descriptors.identifiers, target=target)
+        """
         graphs.scatter(data=lpc.variance[:25], x='components', y='explain',
                        labels={'x': 'the first n components', 'y': '% explained'})
+        """
 
         # Nonlinear dimensionality reduction
         kernel = segments.principals.kernel.Kernel(data=design, exclude=descriptors.exclude,
                                                    identifiers=descriptors.identifiers)
 
         rpc = kernel.exc(kernel='rbf', target=target)
+        """
         graphs.scatter(data=rpc.eigenstates[:15], x='component', y='eigenvalue',
                        labels={'x': 'principal component number', 'y': 'eigenvalue'})
+        """
 
         cpc = kernel.exc(kernel='cosine', target=target)
+        """
         graphs.scatter(data=cpc.eigenstates[:15], x='component', y='eigenvalue',
                        labels={'x': 'principal component number', 'y': 'eigenvalue'})
+        """
 
 
 if __name__ == '__main__':
@@ -67,7 +76,6 @@ if __name__ == '__main__':
 
     import segments.src.directories
     import segments.src.read
-
     import segments.design.matrix
     import segments.design.options
     import segments.principals.linear
