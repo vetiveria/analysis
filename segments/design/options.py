@@ -64,7 +64,7 @@ class Options:
 
         pollutants = self.pollutants(url=url)
         inattributes = [pollutant[1:] if len(pollutant) == 10 else pollutant
-                for pollutant in pollutants ]
+                for pollutant in pollutants]
         select = ['COUNTYGEOID'] + inattributes
         attributes = self.data.attributes[self.data.attributes['field'].isin(select)]
 
@@ -106,6 +106,6 @@ class Options:
 
         # Save
         [self.save(blob=b, name=n, directory=directory)
-         for b in [design, original, attributes] for n in ['design.csv', 'original.csv', 'attributes.csv']]
+         for b, n in zip([design, original, attributes],  ['design.csv', 'original.csv', 'attributes.csv'])]
 
         return design, target
