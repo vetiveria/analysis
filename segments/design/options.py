@@ -8,10 +8,13 @@ import segments.functions.write
 
 
 class Options:
+    """
+    Class  Options
+    """
 
     def __init__(self, data: collections.namedtuple):
         """
-
+        Constructor
         :param data: field_names=['design', 'original', 'attributes', 'root']
         """
 
@@ -24,8 +27,8 @@ class Options:
     @staticmethod
     def section(group: str) -> str:
         """
-
-        :param group:
+        Creates the section name of a risk group
+        :param group:  The group name of a group of pollutants
         :return:
         """
 
@@ -39,8 +42,7 @@ class Options:
     @staticmethod
     def pollutants(url: str) -> list:
         """
-        Read the list of pollutants w.r.t. this url
-
+        Reads the list of pollutants w.r.t. this url
         :param url:
         :return:
         """
@@ -55,7 +57,7 @@ class Options:
 
     def selections(self, url: str) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame):
         """
-
+        Selects pollutants data w.r.t. a list of pollutants listed
         :param url:
         :return:
         """
@@ -66,25 +68,9 @@ class Options:
 
         return self.data.design[select].copy(), self.data.original[select].copy(), attributes
 
-    @staticmethod
-    def directory(path):
+    def save(self, blob: pd.DataFrame, name: str, directory: str):
         """
-
-        :param path:
-        :return:
-        """
-
-        # The directory of the design data
-        directory = os.path.join(path, 'design')
-
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-
-        return directory
-
-    def save(self, blob, name, directory):
-        """
-
+        Save
         :param blob:
         :param name:
         :param directory:
@@ -96,8 +82,8 @@ class Options:
 
     def exc(self, group: str = None) -> (pd.DataFrame, str):
         """
-
-        :param group:
+        Execute
+        :param group: The risk group in focus
         :return:
         """
 
@@ -113,11 +99,11 @@ class Options:
             design, original, attributes = self.selections(url=url)
 
         # The path for the group
-        path = os.path.join(self.warehouse, section)
-        directory = self.directory(path=path)
+        target = os.path.join(self.warehouse, section)
+        directory = os.path.join(target, 'design')
 
         # Save
         [self.save(blob=b, name=n, directory=directory)
          for b in [design, original, attributes] for n in ['design.csv', 'original.csv', 'attributes.csv']]
 
-        return design, path
+        return design, target
