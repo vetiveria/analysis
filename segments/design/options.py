@@ -1,4 +1,5 @@
 import os
+import collections
 
 import pandas as pd
 
@@ -8,66 +9,62 @@ import segments.functions.write
 
 class Options:
 
-    def __init__(self, design: pd.DataFrame, original: pd.DataFrame, attributes: pd.DataFrame):
+    def __init__(self, data: collections.namedtuple):
         """
 
-        :param design:
-        :param original:
-        :param attributes
+        :param data: field_names=['design', 'original', 'attributes', 'root']
         """
 
-        self.design = design
-        self.original = original
-        self.attributes = attributes
+        self.data = data
 
         configurations = config.Config()
         self.warehouse = configurations.warehouse
         self.write = segments.functions.write.Write()
 
     @staticmethod
-    def pollutants(pollutantsurl: str) -> list:
+    def section(group: str) -> str:
         """
-        Read the list of pollutants w.r.t. this pollutantsurl
 
-        :param pollutantsurl:
+        :param group:
+        :return:
+        """
+
+        if group.__contains__('Risk'):
+            name = group.rstrip('RiskPollutantsNames')
+        else:
+            name = group.rstrip('IndexPollutantsNames')
+
+        return name.lower()
+
+    @staticmethod
+    def pollutants(url: str) -> list:
+        """
+        Read the list of pollutants w.r.t. this url
+
+        :param url:
         :return:
         """
 
         try:
-            data: pd.DataFrame = pd.read_csv(filepath_or_buffer=pollutantsurl, header=0,
+            data: pd.DataFrame = pd.read_csv(filepath_or_buffer=url, header=0,
                                              usecols=['tri_chem_id'], dtype={'tri_chem_id': str}, encoding='UTF-8')
         except OSError as err:
             raise Exception(err.strerror) from err
 
         return data['tri_chem_id'].tolist()
 
-    def selections(self, pollutantsurl: str) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame):
+    def selections(self, url: str) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame):
         """
 
-        :param pollutantsurl:
+        :param url:
         :return:
         """
 
-        pollutants = self.pollutants(pollutantsurl=pollutantsurl)
+        pollutants = self.pollutants(url=url)
         select = ['COUNTYGEOID'] + pollutants
+        attributes = self.data.attributes[self.data.attributes['field'].isin(select)]
 
-        design = self.design[select].copy()
-        original = self.original[select].copy()
-        attributes = self.attributes[self.attributes['field'].isin(select)]
-
-        return design, original, attributes
-
-    @staticmethod
-    def section(pollutantsurl: str) -> str:
-
-        value = os.path.splitext(os.path.basename(pollutantsurl))[0]
-
-        if value.__contains__('Risk'):
-            name = value.rstrip('RiskPollutantsNames')
-        else:
-            name = value.rstrip('IndexPollutantsNames')
-
-        return name.lower()
+        return self.data.design[select].copy(), self.data.original[select].copy(), attributes
 
     @staticmethod
     def directory(path):
@@ -86,28 +83,36 @@ class Options:
         return directory
 
     def save(self, blob, name, directory):
+        """
+
+        :param blob:
+        :param name:
+        :param directory:
+        :return:
+        """
 
         # Write
         self.write.exc(blob=blob, path=directory, filename=name)
 
-    def exc(self, pollutantsurl: str = None):
+    def exc(self, group: str = None) -> (pd.DataFrame, str):
         """
 
-        :param pollutantsurl:  'URL string
+        :param group:
         :return:
         """
 
         # The matrices
-        if pollutantsurl is None:
+        if group is None:
             section = 'baseline'
-            design = self.design
-            original = self.original
-            attributes = self.attributes
+            design = self.data.design
+            original = self.data.original
+            attributes = self.data.attributes
         else:
-            section = self.section(pollutantsurl=pollutantsurl)
-            design, original, attributes = self.selections(pollutantsurl=pollutantsurl)
+            url = self.data.root.format(group + '.csv')
+            section = self.section(group=group)
+            design, original, attributes = self.selections(url=url)
 
-        # This pollutantsurl's path
+        # The path for the group
         path = os.path.join(self.warehouse, section)
         directory = self.directory(path=path)
 
