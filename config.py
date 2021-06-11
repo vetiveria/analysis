@@ -1,4 +1,5 @@
 import os
+import collections
 
 
 class Config:
@@ -31,8 +32,11 @@ class Config:
     @staticmethod
     def risk():
 
+        RiskStrings = collections.namedtuple(typename='RiskStrings', field_names=['root', 'groups'])
+
         root = 'https://raw.githubusercontent.com/vetiveria/risk/master/warehouse/{}'
-        risk_groups = ['cancerRiskPollutantsNames', 'immunologicalIndexPollutantsNames', 'kidneyIndexPollutantsNames',
+        groups = [None, 'cancerRiskPollutantsNames', 'immunologicalIndexPollutantsNames',
+                       'kidneyIndexPollutantsNames',
                        'liverIndexPollutantsNames', 'neurologicalIndexPollutantsNames', 'respiratoryIndexPollutantsNames']
 
-        return [root.format(risk_group) + '.csv' for risk_group in risk_groups]
+        return RiskStrings._make((root, groups))
