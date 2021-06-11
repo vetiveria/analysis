@@ -10,7 +10,6 @@ class Config:
     def __init__(self):
         """
         Constructor
-
         root = os.path.abspath(__package__)
         """
 
@@ -31,6 +30,10 @@ class Config:
 
     @staticmethod
     def risk():
+        """
+
+        :return:
+        """
 
         RiskStrings = collections.namedtuple(typename='RiskStrings', field_names=['root', 'groups'])
 
