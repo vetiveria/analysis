@@ -1,4 +1,5 @@
 import os
+import collections
 
 
 class Config:
@@ -9,7 +10,6 @@ class Config:
     def __init__(self):
         """
         Constructor
-
         root = os.path.abspath(__package__)
         """
 
@@ -24,6 +24,22 @@ class Config:
         self.exclude_measurements = ['INVALID']
 
         # Directories
-        self.datapath = os.path.join(os.getcwd(), 'data')
-        self.warehousepath = os.path.join(os.getcwd(), 'warehouse')
-        self.directories = [self.datapath, self.warehousepath]
+        self.source = os.path.join(os.getcwd(), 'data')
+        self.warehouse = os.path.join(os.getcwd(), 'warehouse')
+        self.directories = [self.source, self.warehouse]
+
+    @staticmethod
+    def risk():
+        """
+
+        :return:
+        """
+
+        RiskStrings = collections.namedtuple(typename='RiskStrings', field_names=['root', 'groups'])
+
+        root = 'https://raw.githubusercontent.com/vetiveria/risk/master/warehouse/{}'
+        groups = [None, 'cancerRiskPollutantsNames', 'immunologicalIndexPollutantsNames',
+                       'kidneyIndexPollutantsNames',
+                       'liverIndexPollutantsNames', 'neurologicalIndexPollutantsNames', 'respiratoryIndexPollutantsNames']
+
+        return RiskStrings._make((root, groups))

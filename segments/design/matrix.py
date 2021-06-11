@@ -26,7 +26,7 @@ class Matrix:
         """
 
         self.configurations = config.Config()
-        self.path = os.path.join(self.configurations.warehousepath, 'design')
+        self.path = os.path.join(self.configurations.warehouse, 'design')
 
         self.descriptors = descriptors
 
@@ -69,7 +69,7 @@ class Matrix:
                            axis=1, join='outer', ignore_index=False)
         return design
 
-    def exc(self) -> pd.DataFrame:
+    def exc(self) -> (pd.DataFrame, pd.DataFrame):
         """
         Returns a design matrix
 
@@ -77,7 +77,7 @@ class Matrix:
         """
 
         # The data files, the attributes of the files
-        paths = glob.glob(pathname=os.path.join(self.configurations.datapath, '*.csv'))
+        paths = glob.glob(pathname=os.path.join(self.configurations.source, '*.csv'))
         _, _, kwargs, attributes = segments.src.attributes.Attributes().exc()
 
         # Hence: The design matrix is the scaled form of the original design data
@@ -86,9 +86,4 @@ class Matrix:
         original: pd.DataFrame = frame.reset_index(drop=True)
         design: pd.DataFrame = self.scale(blob=original)
 
-        # Write
-        self.write.exc(blob=attributes, path=self.path, filename='attributes.csv')
-        self.write.exc(blob=original, path=self.path, filename='original.csv')
-        self.write.exc(blob=design, path=self.path, filename='design.csv')
-
-        return design
+        return design, original, attributes

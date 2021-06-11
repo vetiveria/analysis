@@ -8,7 +8,6 @@ import numpy as np
 import pandas as pd
 import sklearn.decomposition
 
-import config
 import segments.functions.margin
 import segments.functions.write
 
@@ -21,7 +20,7 @@ class Kernel:
 
     def __init__(self, data: pd.DataFrame, exclude: list, identifiers: list):
         """
-
+        Constructor
         :param data: The data in focus
         :param exclude: The fields of data that should not be included in the decomposition step
         :param identifiers: The field/s that identify each data row
@@ -31,19 +30,15 @@ class Kernel:
         self.exclude = exclude
         self.identifiers = identifiers
 
-        # Config
-        configurations = config.Config()
-        self.warehousepath = configurations.warehousepath
-
-        # Preliminaries
-        self.KPCA = collections.namedtuple(typename='KPCA', field_names=['projections', 'eigenstates'])
+        self.write = segments.functions.write.Write()
         self.margin = segments.functions.margin.Margin()
         self.random_state = 5
+        self.KPCA = collections.namedtuple(typename='KPCA', field_names=['projections', 'eigenstates'])
 
     def decomposition(self, kernel: str):
         """
-
-        :param kernel:
+        Conducts features projection via kernel principal component analysis decomposition
+        :param kernel: kernel type string
         :return:
         """
 
@@ -58,6 +53,7 @@ class Kernel:
         # The transform
         transform = model.fit_transform(self.data[regressors])
 
+        # Eigenvalues
         eigenvalues = model.lambdas_
         components = np.arange(1, 1 + eigenvalues.shape[0])
 
@@ -65,17 +61,15 @@ class Kernel:
 
     def projections(self, reference: np.ndarray, transform: np.ndarray, limit: int) -> pd.DataFrame:
         """
-
-        :param reference:
-        :param transform:
-        :param limit:
+        Builds the dataframe of projections
+        :param reference: The unique identifier of a record/instance
+        :param transform: The projected features
+        :param limit: The maximum number of projections according to a marginalisation function
         :return:
         """
 
-        # The critical components
+        # The critical components and fields
         core = transform[:, :limit].copy()
-
-        # Fields
         fields = ['C{:02d}'.format(i) for i in np.arange(1, 1 + limit)]
         fields = self.identifiers + fields
 
@@ -84,10 +78,11 @@ class Kernel:
 
         return pd.DataFrame(data=values, columns=fields)
 
-    def exc(self, kernel: str) -> collections.namedtuple:
+    def exc(self, kernel: str, target: str) -> collections.namedtuple:
         """
-
-        :param kernel:
+        Execute
+        :param kernel: kernel type string
+        :param target: the target directory of a risk group
         :return:
         """
 
@@ -103,9 +98,8 @@ class Kernel:
         projections = self.projections(reference=reference, transform=transform, limit=limit)
 
         # Write
-        path = os.path.join(self.warehousepath, 'principals', 'kernel', kernel)
-        write = segments.functions.write.Write()
-        write.exc(blob=eigenstates, path=path, filename='eigenstates.csv')
-        write.exc(blob=projections, path=path, filename='projections.csv')
+        path = os.path.join(target, 'principals', 'kernel', kernel)
+        self.write.exc(blob=eigenstates, path=path, filename='eigenstates.csv')
+        self.write.exc(blob=projections, path=path, filename='projections.csv')
 
         return self.KPCA._make((projections, eigenstates))
