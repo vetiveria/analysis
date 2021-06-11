@@ -9,7 +9,6 @@ import numpy as np
 import pandas as pd
 import sklearn.decomposition
 
-import config
 import segments.functions.margin
 import segments.functions.write
 
@@ -25,23 +24,16 @@ class Linear:
         The constructor
         """
 
-        configurations = config.Config()
-        self.warehouse = configurations.warehouse
-
         self.write = segments.functions.write.Write()
-
-        self.LPCA = collections.namedtuple(typename='LPCA', field_names=['projections', 'variance'])
-
         self.margin = segments.functions.margin.Margin()
         self.random_state = 5
+        self.LPCA = collections.namedtuple(typename='LPCA', field_names=['projections', 'variance'])
 
     @staticmethod
     def variance(model: sklearn.decomposition.PCA) -> pd.DataFrame:
         """
-        The dimensionality reduction model; PCA.
-
+        Extracts the explained variance details of a PCA model
         :param model: The PCA projections
-
         :return:
         """
 
@@ -53,9 +45,9 @@ class Linear:
 
     def decomposition(self, data: pd.DataFrame, exclude: list):
         """
-
-        :param data:
-        :param exclude:
+        Conducts features projection via principal component analysis decomposition
+        :param data: The data to be projected
+        :param exclude: Fields to exclude during features projection
         :return:
         """
 
@@ -77,18 +69,16 @@ class Linear:
     @staticmethod
     def projections(reference: np.ndarray, transform: np.ndarray, limit: int, identifiers: list) -> pd.DataFrame:
         """
-
-        :param reference:
-        :param transform:
-        :param limit:
-        :param identifiers:
+        Builds the dataframe of projections
+        :param reference: The unique identifier of a record/instance
+        :param transform: The projected features
+        :param limit: The maximum number of projections according to a marginalisation function
+        :param identifiers: The field/fields that uniquely identifies a record/instance
         :return:
         """
 
-        # The critical components
+        # The critical components and fields
         core = transform[:, :limit].copy()
-
-        # Fields
         fields = ['C{:02d}'.format(i) for i in np.arange(1, 1 + limit)]
         fields = identifiers + fields
 
@@ -97,15 +87,17 @@ class Linear:
 
         return pd.DataFrame(data=values, columns=fields)
 
-    def exc(self, data: pd.DataFrame, exclude: list, identifiers: list) -> collections.namedtuple:
+    def exc(self, data: pd.DataFrame, exclude: list, identifiers: list, target: str) -> collections.namedtuple:
         """
-
-        :param data:
-        :param exclude:
-        :param identifiers:
+        Execute
+        :param data:  The data to be projected
+        :param exclude:  Fields to exclude during features projection
+        :param identifiers: The field/fields that uniquely identifies a record/instance
+        :param target:
         :return:
         """
 
+        # Decomposition
         transform, variance = self.decomposition(data=data, exclude=exclude)
 
         # Hence, plausible number of core principal components
@@ -117,7 +109,7 @@ class Linear:
         projections = self.projections(reference=reference, transform=transform, limit=limit, identifiers=identifiers)
 
         # Write
-        path = os.path.join(self.warehouse, 'principals', 'linear')
+        path = os.path.join(target, 'principals', 'linear')
         self.write.exc(blob=variance, path=path, filename='variance.csv')
         self.write.exc(blob=projections, path=path, filename='projections.csv')
 
