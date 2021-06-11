@@ -31,6 +31,8 @@ def main():
     options = segments.design.options.Options(data=data)
     for group in risk.groups:
 
+        print('\nIn focus: {}'.format(group))
+
         # The (a) design matrix, and (b) path, of a group
         design, target = options.exc(group=group)
 
